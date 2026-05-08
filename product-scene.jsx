@@ -232,19 +232,37 @@
         //   0.78 ZOOM pavé — camera close, low angle on touchpad
         //   0.92 recompose — full body, hero scale
         //   1.00 order     — settle into card
+        // Cle 'lock' (0|1) : quand 1, la rotation drift + parallax pointeur est
+        // ramenee a ~0 pour que la manette reste rigoureusement de face.
+        // Mapping section -> p (mesure sur la page reelle) :
+        //   00 Hero          : 0.000 - 0.145
+        //   02 Objet         : 0.145 - 0.290
+        //   03 Matiere       : 0.290 - 0.435  <- LOCK face-on demande par l'utilisateur
+        //   04 Capteurs      : 0.435 - 0.580
+        //   05 Geste         : 0.580 - 0.725
+        //   06 Specs/07 Order: 0.725 - 1.000
         const KEYS = [
-          { p:0.00, ry: 0.55, rx:-0.22, sc:1.00, x: 0.00, y: 0.00, camZ:3.60, camX: 0.00, camY: 0.00, fov:32, explode:0, xray:0 },
-          { p:0.14, ry: 0.10, rx:-0.05, sc:1.05, x: 0.00, y:-0.02, camZ:3.50, camX: 0.00, camY: 0.00, fov:30, explode:0, xray:0 },
-          { p:0.30, ry:-0.55, rx:-0.20, sc:1.20, x:-0.05, y: 0.00, camZ:1.80, camX: 0.45, camY: 0.05, fov:34, explode:0, xray:0 },
-          { p:0.40, ry:-1.05, rx: 0.10, sc:1.10, x: 0.00, y: 0.00, camZ:2.40, camX: 0.20, camY: 0.10, fov:34, explode:0, xray:0 },
-          { p:0.46, ry:-1.40, rx: 0.55, sc:0.95, x: 0.00, y: 0.00, camZ:3.20, camX: 0.00, camY: 0.10, fov:36, explode:1, xray:0 },
-          { p:0.56, ry:-1.95, rx: 0.30, sc:1.00, x: 0.00, y: 0.00, camZ:3.40, camX: 0.00, camY: 0.05, fov:34, explode:0.4, xray:0.4 },
-          { p:0.62, ry:-2.30, rx: 0.05, sc:1.05, x: 0.00, y: 0.00, camZ:3.30, camX: 0.00, camY: 0.00, fov:32, explode:0, xray:1 },
-          { p:0.72, ry:-2.85, rx:-0.10, sc:1.05, x: 0.00, y: 0.00, camZ:3.10, camX: 0.00, camY: 0.00, fov:30, explode:0, xray:0.4 },
-          { p:0.78, ry:-3.30, rx:-0.45, sc:1.25, x: 0.00, y:-0.10, camZ:1.90, camX: 0.00, camY:-0.30, fov:36, explode:0, xray:0 },
-          { p:0.88, ry:-3.85, rx:-0.10, sc:1.10, x: 0.00, y: 0.00, camZ:2.80, camX: 0.00, camY: 0.00, fov:32, explode:0, xray:0 },
-          { p:0.94, ry:-4.10, rx: 0.00, sc:1.15, x: 0.00, y: 0.00, camZ:3.20, camX: 0.00, camY: 0.00, fov:32, explode:0, xray:0 },
-          { p:1.00, ry:-4.60, rx:-0.10, sc:0.85, x: 0.00, y:-0.18, camZ:3.80, camX: 0.00, camY:-0.10, fov:30, explode:0, xray:0 },
+          { p:0.00, ry: 0.55, rx:-0.22, sc:1.00, x: 0.00, y: 0.00, camZ:3.60, camX: 0.00, camY: 0.00, fov:32, explode:0, xray:0, lock:0 },
+          { p:0.10, ry: 0.10, rx:-0.05, sc:1.05, x: 0.00, y:-0.02, camZ:3.50, camX: 0.00, camY: 0.00, fov:30, explode:0, xray:0, lock:0 },
+          // Section 02 — Objet : zoom gachette
+          { p:0.22, ry:-0.55, rx:-0.20, sc:1.20, x:-0.05, y: 0.00, camZ:1.80, camX: 0.45, camY: 0.05, fov:34, explode:0, xray:0, lock:0 },
+          // Transition vers Matiere
+          { p:0.28, ry:-0.25, rx:-0.08, sc:1.10, x: 0.00, y: 0.00, camZ:2.50, camX: 0.18, camY: 0.08, fov:34, explode:0, xray:0, lock:0 },
+          // Section 03 — Matiere : entree face-on, lock active
+          { p:0.32, ry: 0.00, rx: 0.00, sc:1.05, x: 0.00, y: 0.00, camZ:2.90, camX: 0.05, camY: 0.05, fov:34, explode:0.15, xray:0, lock:1 },
+          // Section 03 — Matiere : vue eclatee, toujours face-on
+          { p:0.38, ry: 0.00, rx: 0.00, sc:0.95, x: 0.00, y: 0.00, camZ:3.20, camX: 0.00, camY: 0.10, fov:36, explode:1, xray:0, lock:1 },
+          // Section 03 — Matiere : sortie, encore face-on
+          { p:0.43, ry: 0.00, rx: 0.00, sc:1.00, x: 0.00, y: 0.00, camZ:3.30, camX: 0.00, camY: 0.05, fov:34, explode:0.5, xray:0.2, lock:1 },
+          // Section 04 — Capteurs : reprise rotation + xray
+          { p:0.50, ry:-0.50, rx: 0.05, sc:1.05, x: 0.00, y: 0.00, camZ:3.30, camX: 0.00, camY: 0.00, fov:32, explode:0, xray:0.7, lock:0 },
+          { p:0.56, ry:-0.85, rx:-0.05, sc:1.05, x: 0.00, y: 0.00, camZ:3.10, camX: 0.00, camY: 0.00, fov:30, explode:0, xray:1, lock:0 },
+          // Section 05 — Geste : gros plan pave tactile
+          { p:0.65, ry:-1.30, rx:-0.45, sc:1.25, x: 0.00, y:-0.10, camZ:1.90, camX: 0.00, camY:-0.30, fov:36, explode:0, xray:0.2, lock:0 },
+          { p:0.72, ry:-1.55, rx:-0.10, sc:1.10, x: 0.00, y: 0.00, camZ:2.80, camX: 0.00, camY: 0.00, fov:32, explode:0, xray:0, lock:0 },
+          // Sections 06/07 — Specs + Commander
+          { p:0.85, ry:-2.00, rx: 0.00, sc:1.15, x: 0.00, y: 0.00, camZ:3.20, camX: 0.00, camY: 0.00, fov:32, explode:0, xray:0, lock:0 },
+          { p:1.00, ry:-2.50, rx:-0.10, sc:0.85, x: 0.00, y:-0.18, camZ:3.80, camX: 0.00, camY:-0.10, fov:30, explode:0, xray:0, lock:0 },
         ];
         const lerp = (a, b, t) => a + (b - a) * t;
         const easeInOut = (t) => t * t * (3 - 2 * t);
@@ -264,7 +282,7 @@
         // Smooth state we lerp toward each frame (avoid pops at scroll deltas)
         const smooth = {
           ry:0, rx:0, sc:1, x:0, y:0,
-          camZ:3.6, camX:0, camY:0, fov:32, explode:0, xray:0,
+          camZ:3.6, camX:0, camY:0, fov:32, explode:0, xray:0, lock:0,
         };
 
         let frameTime = performance.now();
@@ -286,8 +304,11 @@
 
           if (model) {
             const drift = (now / 1000) * 0.15 * motionFactor;
-            holder.rotation.y = smooth.ry + drift * 0.2 + s.pointer.x * 0.3;
-            holder.rotation.x = smooth.rx + s.pointer.y * 0.18;
+            // lock (0..1) ramene le drift et la parallax pointeur a zero quand
+            // une section verrouille la rotation (ex: section 03 face-on).
+            const freeMotion = 1 - smooth.lock;
+            holder.rotation.y = smooth.ry + (drift * 0.2 + s.pointer.x * 0.3) * freeMotion;
+            holder.rotation.x = smooth.rx + s.pointer.y * 0.18 * freeMotion;
             const sc = smooth.sc * (1 + Math.sin(now / 1800) * 0.005 * motionFactor);
             holder.scale.setScalar(sc);
             holder.position.x = smooth.x;
