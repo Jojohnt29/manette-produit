@@ -1,0 +1,14 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# Vercel
+.vercel
+
+# Node (au cas ou un futur build est ajoute)
+node_modules/
+.env
+.env.local

@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>MANETTE — MNT—01</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&family=Inter+Tight:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@300;400;500&family=Big+Shoulders+Display:wght@500;700;900&display=swap" rel="stylesheet" />
+
+<style>
+:root {
+  --accent: #C8FF3C;
+  --bg: #06060A;
+  --bg-2: #0A0A12;
+  --surface: #10101A;
+  --fg: #F5F4F0;
+  --fg-mid: rgba(245,244,240,0.66);
+  --fg-dim: rgba(245,244,240,0.40);
+  --rule: rgba(245,244,240,0.10);
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+body {
+  background:
+    radial-gradient(1200px 700px at 50% 20%, color-mix(in oklab, var(--accent) 6%, transparent), transparent 70%),
+    radial-gradient(900px 500px at 90% 60%, rgba(255,255,255,0.03), transparent 70%),
+    var(--bg);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+.mono { font-family: var(--font-mono); }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+::selection { background: var(--accent); color: #08080A; }
+
+/* Smooth-scroll inertia (Lenis-style) — driven by JS at end of file */
+html.lenis { height: auto; }
+html.lenis body { overflow: hidden; }
+
+/* Custom cursor */
+* { cursor: none; }
+.cursor-dot, .cursor-ring {
+  position: fixed; top: 0; left: 0; pointer-events: none;
+  z-index: 9999; mix-blend-mode: difference;
+  transition: transform .12s cubic-bezier(0.2,0.8,0.2,1);
+}
+.cursor-dot { width: 6px; height: 6px; background: var(--fg); border-radius: 999px; transform: translate(-50%, -50%); }
+.cursor-ring { width: 32px; height: 32px; border: 1px solid var(--accent); border-radius: 999px; transform: translate(-50%, -50%); transition: transform .25s, width .2s, height .2s; }
+.cursor-ring.hover { width: 56px; height: 56px; border-color: var(--accent); }
+
+/* Film grain + scanlines overlay */
+.film-grain {
+  position: fixed; inset: 0; z-index: 30;
+  pointer-events: none; mix-blend-mode: overlay; opacity: 0.4;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/></svg>");
+  animation: grain-shift 1.2s steps(6) infinite;
+}
+@keyframes grain-shift { 0% { transform: translate(0,0); } 25% { transform: translate(-3%, 2%); } 50% { transform: translate(2%, -1%); } 75% { transform: translate(-1%, 3%); } 100% { transform: translate(1%, -2%); } }
+.scanlines {
+  position: fixed; inset: 0; z-index: 31;
+  pointer-events: none; mix-blend-mode: overlay; opacity: 0.06;
+  background: repeating-linear-gradient(to bottom, transparent 0, transparent 2px, rgba(255,255,255,0.5) 3px, transparent 4px);
+}
+
+/* Boundary glow during cinematic moments */
+.boundary-glow {
+  position: fixed; inset: 0; z-index: 25;
+  pointer-events: none;
+  box-shadow: inset 0 0 120px 20px color-mix(in oklab, var(--accent) 18%, transparent);
+  opacity: 0; transition: opacity .6s;
+}
+.boundary-glow.active { opacity: 1; }
+
+/* Intro loader */
+.intro-loader {
+  position: fixed; inset: 0; z-index: 9000;
+  background: var(--bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 28px;
+  transition: opacity .8s, visibility .8s;
+}
+.intro-loader.done { opacity: 0; visibility: hidden; pointer-events: none; }
+.intro-mark {
+  font-family: var(--font-display); font-size: 64px; font-weight: 700;
+  letter-spacing: -0.04em;
+  color: transparent; -webkit-text-stroke: 1px var(--fg);
+}
+.intro-bar { width: 280px; height: 1px; background: var(--rule); position: relative; overflow: hidden; }
+.intro-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: var(--accent); transition: width .15s linear; }
+.intro-meta { display: flex; gap: 24px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--fg-dim); }
+
+/* Marquee ticker between sections */
+.ticker {
+  position: relative; z-index: 12;
+  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+  background: color-mix(in oklab, var(--bg) 80%, transparent);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  overflow: hidden; padding: 14px 0;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+}
+.ticker-track {
+  display: flex; gap: 48px; white-space: nowrap;
+  animation: ticker-scroll 38s linear infinite;
+  width: max-content;
+}
+.ticker span { color: var(--fg-mid); }
+.ticker span b { color: var(--accent); font-weight: 500; margin-right: 6px; }
+@keyframes ticker-scroll { to { transform: translateX(-50%); } }
+
+/* Section watermark numbers */
+.p-scene-sec { overflow: visible; }
+.section-watermark {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  font-family: var(--font-display); font-size: clamp(280px, 38vw, 560px);
+  font-weight: 700; line-height: 0.86; letter-spacing: -0.06em;
+  color: transparent; -webkit-text-stroke: 1px color-mix(in oklab, var(--fg) 8%, transparent);
+  pointer-events: none; user-select: none;
+  z-index: 5;
+}
+.section-watermark.left { left: -3vw; }
+.section-watermark.right { right: -3vw; }
+
+/* Lateral progress dots */
+.scroll-rail {
+  position: fixed; right: 22px; top: 50%; transform: translateY(-50%);
+  z-index: 40;
+  display: flex; flex-direction: column; gap: 14px;
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--fg-dim);
+}
+.scroll-rail a { display: flex; align-items: center; gap: 12px; transition: color .2s; }
+.scroll-rail a:hover, .scroll-rail a.active { color: var(--fg); }
+.scroll-rail .dot {
+  width: 6px; height: 6px; border-radius: 999px; background: transparent;
+  border: 1px solid var(--fg-dim); transition: all .2s;
+}
+.scroll-rail a.active .dot { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 12px var(--accent); }
+.scroll-rail span { opacity: 0; transition: opacity .2s; }
+.scroll-rail a:hover span, .scroll-rail a.active span { opacity: 1; }
+
+/* Hotspot pulses on the 3D layer */
+.hotspot {
+  position: fixed; width: 14px; height: 14px;
+  z-index: 15; pointer-events: auto; cursor: none;
+  transform: translate(-50%, -50%);
+  opacity: 0; transition: opacity .4s;
+}
+.hotspot.visible { opacity: 1; }
+.hotspot::before, .hotspot::after {
+  content: ''; position: absolute; inset: 0; border-radius: 999px;
+  background: var(--accent);
+}
+.hotspot::before { transform: scale(0.3); }
+.hotspot::after { animation: hot-pulse 1.8s ease-out infinite; opacity: 0.5; }
+@keyframes hot-pulse { 0% { transform: scale(0.3); opacity: 0.6; } 100% { transform: scale(2.4); opacity: 0; } }
+.hotspot-tip {
+  position: absolute; left: 22px; top: -6px;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--fg);
+  background: color-mix(in oklab, var(--bg) 75%, transparent);
+  border: 1px solid var(--rule);
+  padding: 6px 10px; border-radius: 4px;
+  white-space: nowrap; pointer-events: none;
+  opacity: 0; transition: opacity .2s;
+}
+.hotspot:hover .hotspot-tip { opacity: 1; }
+
+/* Configurateur (finishes) */
+.config-rail {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+  z-index: 40;
+  display: flex; gap: 10px; align-items: center;
+  padding: 10px 16px;
+  background: color-mix(in oklab, var(--bg) 75%, transparent);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--rule); border-radius: 999px;
+}
+.config-rail .lbl { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--fg-dim); margin-right: 8px; }
+.config-swatch {
+  width: 26px; height: 26px; border-radius: 999px;
+  border: 1px solid var(--rule-strong, rgba(255,255,255,0.2));
+  cursor: none; transition: transform .15s;
+}
+.config-swatch:hover { transform: scale(1.1); }
+.config-swatch.active { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--accent); }
+
+/* Wordmark variable weight tied to scroll */
+.p-hero-h { font-variation-settings: "wght" var(--hero-wght, 700); transition: font-variation-settings .3s; }
+
+/* Section title XXL counter */
+.section-counter {
+  font-family: var(--font-display); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 10px;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-counter::after { content: ''; width: 40px; height: 1px; background: var(--accent); }
+
+/* ── 3D scene stage ─────────────────────────────────────── */
+.p-scene-stage {
+  position: fixed; inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+.scene-wrap { position: absolute; inset: 0; }
+.scene-wrap canvas { pointer-events: none; }
+.p-scene-vignette {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.55) 100%);
+  pointer-events: none;
+}
+.p-scene-glow {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.7;
+}
+
+/* HUD */
+.p-hud {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-mid);
+}
+.p-hud > div { position: absolute; display: flex; gap: 14px; }
+.p-hud-tl { top: 84px; left: 28px; flex-direction: column; gap: 6px; }
+.p-hud-tr { top: 84px; right: 28px; flex-direction: column; gap: 6px; align-items: flex-end; }
+.p-hud-bl { bottom: 28px; left: 28px; flex-direction: column; gap: 8px; min-width: 220px; }
+.p-hud-br { bottom: 28px; right: 28px; }
+.p-hud-bar {
+  width: 220px; height: 2px;
+  background: rgba(255,255,255,0.08);
+  position: relative; overflow: hidden;
+}
+.p-hud-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; transition: width 0.2s; }
+
+/* ── Topbar ─────────────────────────────────────────────── */
+.p-topbar {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: 50;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 18px 28px;
+  transition: background .2s, border-color .2s;
+  border-bottom: 1px solid transparent;
+}
+.p-topbar.scrolled {
+  background: color-mix(in oklab, var(--bg) 78%, transparent);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border-bottom: 1px solid var(--rule);
+}
+.p-brand {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 600; font-size: 17px; letter-spacing: 0.02em;
+}
+.p-nav {
+  display: flex; gap: 26px;
+  font-size: 12px;
+  color: var(--fg-mid);
+  font-family: var(--font-mono);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  justify-self: center;
+}
+.p-nav a:hover { color: var(--fg); }
+.p-actions { justify-self: end; }
+.p-cta {
+  display: inline-flex; align-items: center;
+  padding: 9px 16px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  transition: all .15s;
+}
+.p-cta:hover { background: var(--accent); color: #08080A !important; }
+
+/* ── Content layer ──────────────────────────────────────── */
+.p-content {
+  position: relative;
+  z-index: 10;
+}
+
+/* ── HERO ───────────────────────────────────────────────── */
+.p-hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: 132px 28px 48px;
+  position: relative;
+}
+.p-hero-meta {
+  display: flex; gap: 28px;
+  font-size: 10px;
+  color: var(--fg-mid);
+  letter-spacing: 0.18em; text-transform: uppercase;
+}
+/* Hero wordmark sits BEHIND the controller — outline only, so the 3D object
+   remains the focal point throughout the site. */
+.p-hero-h {
+  font-family: var(--font-display);
+  font-size: clamp(120px, 22vw, 320px);
+  font-weight: 700;
+  line-height: 0.86;
+  letter-spacing: -0.05em;
+  margin: 0;
+  text-align: center;
+  color: transparent;
+  -webkit-text-stroke: 1px color-mix(in oklab, var(--fg) 35%, transparent);
+  animation: hero-rise 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  pointer-events: none;
+}
+@keyframes hero-rise { from { opacity: 0; transform: translateY(40px); } }
+.p-hero-t {
+  font-family: var(--font-display);
+  font-size: clamp(20px, 2vw, 28px);
+  font-weight: 400;
+  text-align: center;
+  margin: 12px 0 0;
+  color: var(--fg-mid);
+  letter-spacing: -0.005em;
+}
+.p-hero-foot {
+  display: flex; justify-content: space-between;
+  font-size: 10px;
+  color: var(--fg-dim);
+  letter-spacing: 0.16em; text-transform: uppercase;
+}
+.p-hero-foot > span:first-child { font-size: 18px; animation: bounce-down 2.4s ease-in-out infinite; }
+@keyframes bounce-down { 0%,100% { transform: translateY(0); } 50% { transform: translateY(8px); } }
+
+/* ── Scene sections (sticky scrolling reveals) ──────────── */
+.p-scene-sec {
+  min-height: 100vh;
+  display: flex; align-items: center;
+  padding: 0 28px;
+  position: relative;
+}
+.p-panel {
+  max-width: 380px;
+  background: color-mix(in oklab, var(--surface) 78%, transparent);
+  backdrop-filter: blur(14px) saturate(1.05);
+  -webkit-backdrop-filter: blur(14px) saturate(1.05);
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  padding: 28px 28px 26px;
+  position: relative;
+  box-shadow:
+    0 1px 0 color-mix(in oklab, var(--fg) 6%, transparent) inset,
+    0 30px 60px -28px rgba(0,0,0,0.55);
+  animation: panel-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+/* Traveling green halo around panel + order card */
+@property --halo-ang { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+.p-panel::after,
+.p-order-card::after {
+  content: ''; position: absolute; inset: 0;
+  border-radius: inherit; padding: 1.5px;
+  background: conic-gradient(
+    from var(--halo-ang),
+    transparent 0deg,
+    color-mix(in oklab, var(--accent) 30%, transparent) 30deg,
+    var(--accent) 60deg,
+    color-mix(in oklab, var(--accent) 30%, transparent) 90deg,
+    transparent 130deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  animation: halo-rotate 4.6s linear infinite;
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px color-mix(in oklab, var(--accent) 55%, transparent));
+}
+.p-order-card::after { animation-duration: 6.2s; padding: 1.5px; }
+@keyframes halo-rotate { to { --halo-ang: 360deg; } }
+/* Stagger so the four panels don't pulse in lockstep */
+#objet    .p-panel::after { animation-delay: -0.6s; }
+#matiere  .p-panel::after { animation-delay: -2.0s; }
+#capteurs .p-panel::after { animation-delay: -3.2s; }
+#geste    .p-panel::after { animation-delay: -4.1s; }
+@keyframes panel-in { from { opacity: 0; transform: translateY(40px); } }
+.p-panel-right { margin-left: auto; margin-right: 3vw; }
+.p-panel-left { margin-left: 3vw; margin-right: auto; }
+.p-panel-kicker {
+  font-size: 10px;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--fg-mid);
+  margin-bottom: 18px;
+}
+.p-panel-h {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 2.8vw, 40px);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  margin: 0 0 14px;
+  text-wrap: balance;
+}
+.p-panel-t {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--fg-mid);
+  margin: 0;
+  text-wrap: pretty;
+}
+.p-stats {
+  list-style: none; padding: 0; margin: 28px 0 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  border-top: 1px solid var(--rule);
+  padding-top: 22px;
+}
+.p-stat-v {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+.p-stat-l {
+  font-size: 10px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--fg-dim);
+}
+
+/* ── Specs ──────────────────────────────────────────────── */
+/* Specs sits ON TOP of the 3D scene — translucent so the controller stays the hero */
+.p-specs {
+  position: relative;
+  z-index: 10;
+  background: linear-gradient(180deg,
+    color-mix(in oklab, var(--bg) 30%, transparent) 0%,
+    color-mix(in oklab, var(--bg) 88%, transparent) 30%,
+    var(--bg) 100%);
+  padding: 200px 28px 120px;
+  border-top: 1px solid var(--rule);
+}
+.p-specs-head { max-width: 880px; margin: 0 auto 80px; text-align: center; }
+.p-specs-tag { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 14px; }
+.p-specs-h {
+  font-family: var(--font-display);
+  font-size: clamp(48px, 6vw, 88px);
+  font-weight: 500;
+  line-height: 0.96;
+  letter-spacing: -0.035em;
+  margin: 0 0 18px;
+}
+.p-specs-lead { font-size: 18px; color: var(--fg-mid); margin: 0; }
+.p-specs-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  max-width: 1280px; margin: 0 auto;
+}
+.p-spec-col {
+  background: var(--bg);
+  padding: 32px 28px;
+}
+.p-spec-h {
+  font-size: 11px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 20px;
+}
+.p-spec-col dl { margin: 0; }
+.p-spec-row {
+  display: flex; justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 13px;
+}
+.p-spec-row:last-child { border-bottom: 0; }
+.p-spec-row dt { color: var(--fg-dim); margin: 0; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+.p-spec-row dd { margin: 0; color: var(--fg); font-weight: 500; text-align: right; max-width: 60%; }
+
+/* ── Order ──────────────────────────────────────────────── */
+.p-order {
+  position: relative;
+  padding: 120px 28px;
+  background: var(--bg);
+  border-top: 1px solid var(--rule);
+}
+.p-order-card {
+  max-width: 980px; margin: 0 auto;
+  background:
+    radial-gradient(800px 400px at 80% 20%, color-mix(in oklab, var(--accent) 10%, transparent), transparent 70%),
+    var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 60px 56px;
+  position: relative;
+  overflow: hidden;
+}
+.p-order-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(to right, transparent, var(--accent), transparent);
+  opacity: 0.35;
+}
+.p-order-h {
+  font-family: var(--font-display);
+  font-size: clamp(38px, 4.5vw, 64px);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  margin: 18px 0 18px;
+  text-wrap: balance;
+}
+.p-order-t { font-size: 16px; color: var(--fg-mid); line-height: 1.6; max-width: 60ch; margin: 0 0 36px; }
+.p-order-row {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 24px;
+  padding-top: 28px; padding-bottom: 28px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+.p-price { display: flex; align-items: baseline; gap: 14px; }
+.p-price-from { font-size: 11px; color: var(--fg-dim); letter-spacing: 0.14em; text-transform: uppercase; }
+.p-price-v {
+  font-family: var(--font-display);
+  font-size: 56px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+.p-order-actions { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.p-btn-primary {
+  display: inline-flex; align-items: center;
+  padding: 16px 26px;
+  font-size: 14px; font-weight: 500;
+  border-radius: 999px;
+  transition: transform .2s, box-shadow .2s;
+}
+.p-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 32px color-mix(in oklab, var(--accent) 35%, transparent); }
+.p-btn-ghost {
+  display: inline-flex; align-items: center;
+  padding: 16px 22px;
+  font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--fg-mid);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+}
+.p-btn-ghost:hover { color: var(--fg); border-color: var(--accent); }
+.p-order-foot {
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+  padding-top: 22px;
+  font-size: 11px; color: var(--fg-dim);
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+
+/* ── Footer ─────────────────────────────────────────────── */
+.p-footer {
+  position: relative;
+  background: var(--bg);
+  padding: 120px 28px 32px;
+  border-top: 1px solid var(--rule);
+  overflow: hidden;
+}
+.p-foot-mark {
+  font-family: var(--font-display);
+  font-size: clamp(120px, 18vw, 240px);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 0.86;
+  background: linear-gradient(180deg, var(--fg) 0%, color-mix(in oklab, var(--fg) 25%, transparent) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 60px;
+  text-align: center;
+}
+.p-foot-cols {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+  max-width: 1280px;
+  margin: 0 auto 60px;
+  border-top: 1px solid var(--rule);
+  padding-top: 40px;
+}
+.p-foot-cols > div { display: flex; flex-direction: column; gap: 10px; }
+.p-foot-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--fg-dim); margin-bottom: 4px; }
+.p-foot-cols a { font-size: 13px; color: var(--fg); transition: color .15s; }
+.p-foot-cols a:hover { color: var(--accent); }
+.p-foot-bottom {
+  max-width: 1280px; margin: 0 auto;
+  display: flex; gap: 22px; flex-wrap: wrap;
+  font-size: 11px; color: var(--fg-mid);
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding-top: 22px;
+  border-top: 1px solid var(--rule);
+}
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .p-nav { display: none; }
+  .p-topbar { grid-template-columns: 1fr 1fr; }
+  .p-panel-left, .p-panel-right { margin: 0 auto; }
+  .p-specs-grid { grid-template-columns: repeat(2, 1fr); }
+  .p-foot-cols { grid-template-columns: repeat(2, 1fr); }
+  .p-hud-tl, .p-hud-tr { display: none; }
+}
+
+/* ── Mobile dedicated experience ─────────────────────────
+   Below 760px we ditch the desktop chrome (cursor, grain, scanlines,
+   lateral rail, watermark numbers, ticker, intro loader timing) and
+   rebuild the page as a tactile, vertical stack: scene becomes a sticky
+   half-height "card" between sections, panels stack full-width, tap
+   targets >= 44px, bottom-anchored configurateur and chapter pills. */
+@media (max-width: 760px), (pointer: coarse) {
+  /* Native cursor returns; the custom one + film overlays would be
+     pure noise on a phone. */
+  * { cursor: auto !important; }
+  .cursor-dot, .cursor-ring,
+  .film-grain, .scanlines,
+  .scroll-rail,
+  .section-watermark,
+  .p-hud { display: none !important; }
+
+  /* Re-enable native scroll on iOS — we're not relying on the inertia
+     hack here, the OS does it better. */
+  html, body { overflow: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Intro loader: smaller, faster */
+  .intro-mark { font-size: 38px; }
+  .intro-bar { width: 60vw; }
+  .intro-meta { flex-direction: column; gap: 6px; align-items: center; font-size: 9px; }
+
+  /* Topbar collapses to logo + cart */
+  .p-topbar {
+    grid-template-columns: 1fr auto !important;
+    padding: 14px 18px !important;
+    height: 56px;
+  }
+  .p-topbar-r { gap: 10px; }
+  .p-cta { padding: 10px 14px; font-size: 12px; min-height: 40px; }
+
+  /* The 3D scene becomes a sticky framed card that floats with the
+     copy instead of taking the whole viewport — feels more like a
+     scrollable product page than a desktop cinematic. */
+  .p-scene-stage {
+    position: sticky;
+    top: 56px;
+    height: 52vh;
+    inset: auto;
+    margin: 0 14px;
+    border: 1px solid var(--rule);
+    border-radius: 18px;
+    overflow: hidden;
+    background:
+      radial-gradient(80% 60% at 50% 40%, color-mix(in oklab, var(--accent) 4%, transparent), transparent 70%),
+      var(--bg-2);
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.6);
+  }
+  .p-scene-vignette { border-radius: 18px; }
+
+  /* Hero stacks; wordmark stays the focal element. */
+  .p-hero {
+    padding: 80px 18px 32px !important;
+    min-height: auto;
+    gap: 22px;
+  }
+  .p-hero-meta { flex-wrap: wrap; gap: 10px 18px; font-size: 9px; }
+  .p-hero-h { font-size: clamp(72px, 26vw, 140px) !important; }
+  .p-hero-t { font-size: 14px; padding: 0 12px; }
+  .p-hero-foot { flex-direction: row; flex-wrap: wrap; gap: 10px; font-size: 9px; }
+
+  /* Scene sections become vertical cards under the sticky scene. */
+  .p-scene-sec {
+    min-height: auto !important;
+    padding: 36px 20px !important;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .p-panel {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 22px;
+    background: color-mix(in oklab, var(--surface) 92%, transparent);
+    border: 1px solid var(--rule);
+    border-radius: 14px;
+    backdrop-filter: blur(10px);
+  }
+  .p-panel-kicker { font-size: 10px; margin-bottom: 12px; }
+  .p-panel-h { font-size: clamp(28px, 7vw, 38px); }
+  .p-panel-t { font-size: 14px; line-height: 1.55; }
+  .p-stats { grid-template-columns: repeat(3, 1fr); gap: 8px; padding-top: 16px; margin-top: 18px; }
+  .p-stat-v { font-size: 22px; }
+  .p-stat-l { font-size: 9px; }
+
+  /* Specs grid → single column; rows stay readable. */
+  .p-specs { padding: 80px 16px 60px !important; }
+  .p-specs-h { font-size: clamp(40px, 10vw, 64px) !important; }
+  .p-specs-grid { grid-template-columns: 1fr !important; }
+  .p-spec-col { padding: 22px 18px !important; }
+
+  /* Order block & footer */
+  .p-order { padding: 60px 18px !important; }
+  .p-foot-cols { grid-template-columns: 1fr 1fr !important; gap: 22px !important; }
+  .p-foot-bottom { gap: 10px; font-size: 9px; }
+
+  /* Ticker shrinks but stays */
+  .ticker { padding: 10px 0; font-size: 10px; }
+  .ticker-track { gap: 28px; animation-duration: 26s; }
+
+  /* Configurateur becomes a horizontal scroller pinned bottom */
+  .config-rail {
+    bottom: 14px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    padding: 8px 12px !important;
+    gap: 8px !important;
+  }
+  .config-rail .lbl { display: none; }
+  .config-swatch { width: 30px !important; height: 30px !important; }
+
+  /* Hotspots: bigger touch targets, no hover-only tooltips */
+  .hotspot { width: 22px !important; height: 22px !important; }
+  .hotspot-tip {
+    font-size: 9px !important; padding: 5px 8px !important;
+    left: 28px !important; opacity: 1 !important;
+    max-width: 50vw; white-space: normal; line-height: 1.3;
+  }
+
+  /* Mobile chapter pills (injected by JS) */
+  .mobile-chapters {
+    position: sticky; top: 56px; z-index: 14;
+    display: flex; gap: 8px; padding: 10px 14px;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    background: color-mix(in oklab, var(--bg) 88%, transparent);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--rule);
+    scrollbar-width: none;
+  }
+  .mobile-chapters::-webkit-scrollbar { display: none; }
+  .mobile-chapters a {
+    flex: 0 0 auto;
+    padding: 8px 14px; min-height: 36px;
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--fg-mid);
+    border: 1px solid var(--rule); border-radius: 999px;
+    display: flex; align-items: center; gap: 8px;
+    transition: all .2s;
+  }
+  .mobile-chapters a.active {
+    color: var(--bg); background: var(--accent); border-color: var(--accent);
+  }
+  .mobile-chapters a b { font-weight: 500; opacity: 0.6; }
+  .mobile-chapters a.active b { opacity: 1; }
+}
+
+/* Hide the desktop-only mobile-chapters bar above 760px */
+@media (min-width: 761px) and (pointer: fine) {
+  .mobile-chapters { display: none !important; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Intro loader (hidden after first paint) -->
+<div class="intro-loader" id="introLoader">
+  <div class="intro-mark">MANETTE</div>
+  <div class="intro-bar"><div class="intro-bar-fill" id="introFill"></div></div>
+  <div class="intro-meta">
+    <span>SCAN <span id="introPct">000</span>%</span>
+    <span>MNT—01 / SÉRIE A</span>
+    <span>PARIS · 2026</span>
+  </div>
+</div>
+
+<!-- Custom cursor + film effects -->
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="film-grain"></div>
+<div class="scanlines"></div>
+<div class="boundary-glow" id="boundaryGlow"></div>
+
+<!-- Marquee ticker, lateral rail and configurateur are mounted by JS after content -->
+
+<script>
+// ── Custom cursor ──────────────────────────────────────────
+(() => {
+  const dot = document.getElementById('cursorDot');
+  const ring = document.getElementById('cursorRing');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+  window.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY;
+    dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%,-50%)`;
+  });
+  const tick = () => { rx += (mx - rx) * 0.15; ry += (my - ry) * 0.15;
+    ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%,-50%)`;
+    requestAnimationFrame(tick);
+  };
+  tick();
+  document.addEventListener('mouseover', e => {
+    if (e.target.closest('a, button, .hotspot, .config-swatch')) ring.classList.add('hover');
+    else ring.classList.remove('hover');
+  });
+})();
+
+// ── Smooth scroll (lightweight Lenis-style inertia) ────────
+(() => {
+  let target = 0, current = 0, raf = 0;
+  const update = () => {
+    target = window.scrollY;
+    current += (target - current) * 0.12;
+    if (Math.abs(target - current) < 0.1) current = target;
+    document.body.style.setProperty('--scroll-vel', Math.abs(target - current).toFixed(2));
+    raf = requestAnimationFrame(update);
+  };
+  // Native scroll is fine — we only expose velocity via a CSS var
+  // for downstream effects (variable weight, boundary glow).
+  raf = requestAnimationFrame(update);
+})();
+
+// ── Intro loader: ramp to 100, then dismiss ────────────────
+(() => {
+  const fill = document.getElementById('introFill');
+  const pct = document.getElementById('introPct');
+  const el = document.getElementById('introLoader');
+  let p = 0;
+  const id = setInterval(() => {
+    p += 4 + Math.random() * 8;
+    if (p >= 100) { p = 100; clearInterval(id); setTimeout(() => el.classList.add('done'), 350); }
+    fill.style.width = p + '%';
+    pct.textContent = String(Math.floor(p)).padStart(3, '0');
+  }, 60);
+})();
+
+// ── Boundary glow at fast scroll ───────────────────────────
+(() => {
+  const g = document.getElementById('boundaryGlow');
+  let last = 0, lastT = performance.now(), timer = null;
+  window.addEventListener('scroll', () => {
+    const now = performance.now();
+    const v = Math.abs(window.scrollY - last) / Math.max(1, now - lastT);
+    last = window.scrollY; lastT = now;
+    if (v > 1.2) {
+      g.classList.add('active');
+      clearTimeout(timer);
+      timer = setTimeout(() => g.classList.remove('active'), 220);
+    }
+  }, { passive: true });
+})();
+
+// ── Lateral progress rail ──────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    const sections = [
+      { id: 'objet', n: '02', t: 'Objet' },
+      { id: 'matiere', n: '03', t: 'Matière' },
+      { id: 'capteurs', n: '04', t: 'Capteurs' },
+      { id: 'geste', n: '05', t: 'Geste' },
+      { id: 'caracteristiques', n: '06', t: 'Specs' },
+      { id: 'commander', n: '07', t: 'Commander' },
+    ];
+    const rail = document.createElement('nav');
+    rail.className = 'scroll-rail';
+    rail.innerHTML = sections.map(s =>
+      `<a href="#${s.id}" data-id="${s.id}"><span>${s.n} ${s.t}</span><i class="dot"></i></a>`
+    ).join('');
+    document.body.appendChild(rail);
+    const onScroll = () => {
+      let active = null;
+      sections.forEach(s => {
+        const el = document.getElementById(s.id);
+        if (el && el.getBoundingClientRect().top < window.innerHeight * 0.4) active = s.id;
+      });
+      rail.querySelectorAll('a').forEach(a => a.classList.toggle('active', a.dataset.id === active));
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }, 600);
+});
+
+// ── Marquee ticker (injected after hero) ───────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    const items = [
+      ['MNT—01', 'SÉRIE A'], ['MASSE', '282g'], ['LATENCE', '<3ms'],
+      ['CAPTEURS', 'EFFET HALL 16-BIT'], ['AUTONOMIE', '38h'],
+      ['CHARGE', 'USB-C 18W'], ['BLUETOOTH', '5.4'], ['GARANTIE', '3 ANS'],
+      ['MATIÈRE', '86% EUROPE'], ['PIÈCES DÉTACHÉES', '12'],
+      ['FINITIONS', '4'], ['PRIX', '219€']
+    ];
+    const seq = items.map(([k, v]) => `<span><b>${k}</b>${v}</span>`).join('');
+    const ticker = document.createElement('div');
+    ticker.className = 'ticker';
+    ticker.innerHTML = `<div class="ticker-track">${seq + seq}</div>`;
+    const hero = document.querySelector('.p-hero');
+    if (hero && hero.nextSibling) hero.parentNode.insertBefore(ticker, hero.nextSibling);
+  }, 800);
+});
+
+// ── Configurateur (finishes) ───────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    const finishes = [
+      { id: 'graphite', name: 'Graphite', color: '#1a1a20' },
+      { id: 'ivoire', name: 'Ivoire', color: '#e8e2d2' },
+      { id: 'plomb', name: 'Plomb', color: '#5a5d63' },
+      { id: 'lime', name: 'Lime', color: '#c8ff3c' },
+    ];
+    const rail = document.createElement('div');
+    rail.className = 'config-rail';
+    rail.innerHTML = `<span class="lbl">Finition</span>` + finishes.map(f =>
+      `<button class="config-swatch" data-id="${f.id}" data-name="${f.name}" style="background:${f.color}" title="${f.name}"></button>`
+    ).join('');
+    document.body.appendChild(rail);
+    const swatches = rail.querySelectorAll('.config-swatch');
+    swatches[0].classList.add('active');
+    swatches.forEach(s => s.addEventListener('click', () => {
+      swatches.forEach(x => x.classList.remove('active'));
+      s.classList.add('active');
+      window.dispatchEvent(new CustomEvent('mn-finish', { detail: s.dataset.id }));
+    }));
+  }, 700);
+});
+
+// ── Hotspots — pulses overlaid on the 3D scene per section ─
+// Coordinates are in viewport % (anchored to the fixed scene), so they
+// move with the controller as the scene re-renders. Each hotspot is
+// only visible while its parent section is dominant.
+window.addEventListener('DOMContentLoaded', () => {
+  const HOTSPOTS = {
+    objet: [
+      { x: 50, y: 28, t: "Gâchette adaptative · course 5mm" },
+      { x: 64, y: 56, t: "Pavé directionnel · 8 directions" },
+      { x: 36, y: 56, t: "Joystick effet Hall · sans dérive" },
+    ],
+    matiere: [
+      { x: 50, y: 22, t: "Coque haute · polycarbonate teint" },
+      { x: 32, y: 70, t: "Coque basse · 4 vis Torx T6" },
+      { x: 70, y: 48, t: "Module gâchette · démontable" },
+    ],
+    capteurs: [
+      { x: 36, y: 50, t: "Capteur Hall 16-bit" },
+      { x: 64, y: 50, t: "Trigger ADC 1ms" },
+      { x: 50, y: 70, t: "Antenne BT 5.4 · 2 dBi" },
+    ],
+    geste: [
+      { x: 58, y: 62, t: "Pavé tactile · 32×24mm" },
+      { x: 42, y: 38, t: "Texture mat · grip 2.4N" },
+    ],
+  };
+  const layer = document.createElement('div');
+  layer.style.cssText = 'position:fixed;inset:0;z-index:15;pointer-events:none;';
+  document.body.appendChild(layer);
+  const dots = {};
+  Object.entries(HOTSPOTS).forEach(([sec, list]) => {
+    dots[sec] = list.map(({ x, y, t }) => {
+      const el = document.createElement('div');
+      el.className = 'hotspot';
+      el.style.left = x + 'vw'; el.style.top = y + 'vh';
+      el.innerHTML = `<span class="hotspot-tip">${t}</span>`;
+      el.addEventListener('click', () => el.classList.toggle('locked'));
+      layer.appendChild(el);
+      return el;
+    });
+  });
+  let activeSec = null;
+  const updateActive = () => {
+    let next = null;
+    Object.keys(HOTSPOTS).forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        const r = el.getBoundingClientRect();
+        if (r.top < window.innerHeight * 0.45 && r.bottom > window.innerHeight * 0.45) next = id;
+      }
+    });
+    if (next === activeSec) return;
+    activeSec = next;
+    Object.entries(dots).forEach(([sec, els]) => {
+      els.forEach(el => el.classList.toggle('visible', sec === activeSec));
+    });
+  };
+  window.addEventListener('scroll', updateActive, { passive: true });
+  setTimeout(updateActive, 1200);
+});
+
+// ── Mobile chapter pills (sticky horizontal scroller) ──────
+window.addEventListener('DOMContentLoaded', () => {
+  if (!matchMedia('(max-width: 760px), (pointer: coarse)').matches) return;
+  setTimeout(() => {
+    const chapters = [
+      { id: 'objet', n: '02', t: 'Objet' },
+      { id: 'matiere', n: '03', t: 'Matière' },
+      { id: 'capteurs', n: '04', t: 'Capteurs' },
+      { id: 'geste', n: '05', t: 'Geste' },
+      { id: 'caracteristiques', n: '06', t: 'Specs' },
+      { id: 'commander', n: '07', t: 'Commander' },
+    ];
+    const bar = document.createElement('nav');
+    bar.className = 'mobile-chapters';
+    bar.innerHTML = chapters.map(c =>
+      `<a href="#${c.id}" data-id="${c.id}"><b>${c.n}</b>${c.t}</a>`
+    ).join('');
+    const topbar = document.querySelector('.p-topbar');
+    if (topbar && topbar.parentNode) topbar.parentNode.insertBefore(bar, topbar.nextSibling);
+    const links = bar.querySelectorAll('a');
+    const onScroll = () => {
+      let active = null;
+      chapters.forEach(c => {
+        const el = document.getElementById(c.id);
+        if (el && el.getBoundingClientRect().top < window.innerHeight * 0.4) active = c.id;
+      });
+      links.forEach(a => {
+        const isActive = a.dataset.id === active;
+        a.classList.toggle('active', isActive);
+        if (isActive) {
+          const left = a.offsetLeft - bar.clientWidth / 2 + a.offsetWidth / 2;
+          bar.scrollTo({ left, behavior: 'smooth' });
+        }
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }, 600);
+});
+
+// ── Konami easter egg ──────────────────────────────────────
+(() => {
+  const code = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+  let i = 0;
+  window.addEventListener('keydown', e => {
+    if (e.key === code[i]) { i++; if (i === code.length) { document.body.classList.toggle('konami'); i = 0; } }
+    else i = 0;
+  });
+})();
+</script>
+
+<!-- Three.js via importmap, then expose globally for non-module code -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+  import * as THREE from 'three';
+  import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+  import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+  import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+  window.THREE = THREE;
+  window.GLTFLoader = GLTFLoader;
+  window.DRACOLoader = DRACOLoader;
+  window.MeshoptDecoder = MeshoptDecoder;
+  window.dispatchEvent(new Event('three-ready'));
+</script>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="product-scene.jsx"></script>
+<script type="text/babel" src="product-page.jsx"></script>
+</body>
+</html>
