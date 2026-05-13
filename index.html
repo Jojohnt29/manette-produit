@@ -6,6 +6,11 @@
 <title>MANETTE — MNT—01</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<!-- Preconnect aux CDN React + Three pour amorcer la connexion TLS au plus tot -->
+<link rel="preconnect" href="https://unpkg.com" crossorigin />
+<!-- Preload du modele 3D : la fetch commence des le parsing du HTML, en
+     parallele avec React/Three. Gain de ~1s sur la premiere apparition. -->
+<link rel="preload" href="assets/manette.glb" as="fetch" type="model/gltf-binary" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&family=Inter+Tight:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@300;400;500&family=Big+Shoulders+Display:wght@500;700;900&display=swap" rel="stylesheet" />
 
 <style>
@@ -653,6 +658,22 @@ html.lenis body { overflow: hidden; }
   .hotspot, .hotspot-tip,
   .p-hud { display: none !important; }
 
+  /* Performance : backdrop-filter est tres couteux sur GPU mobile
+     (repaint plein-ecran a chaque pixel de scroll). On le retire des
+     surfaces fixes/translucides pour rendre le scroll fluide. */
+  .p-topbar, .p-topbar.scrolled,
+  .p-panel,
+  .ticker,
+  .config-rail,
+  .mobile-chapters {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: color-mix(in oklab, var(--bg) 94%, transparent) !important;
+  }
+  /* Le halo conique des panels disparait sur mobile : decoratif, mais
+     conic-gradient + drop-shadow tournants sont couteux. */
+  .p-panel::after, .p-order-card::after { display: none !important; }
+
   /* Re-enable native scroll on iOS — we're not relying on the inertia
      hack here, the OS does it better. */
   html, body { overflow: auto; -webkit-overflow-scrolling: touch; }
@@ -1107,12 +1128,13 @@ window.addEventListener('DOMContentLoaded', () => {
   window.dispatchEvent(new Event('three-ready'));
 </script>
 
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<!-- React 18 en BUILD PRODUCTION (au lieu de development) : ~50% plus leger
+     et sans les warnings dev qui ralentissent. -->
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 
-<script type="text/babel" src="tweaks-panel.jsx"></script>
-<script type="text/babel" src="product-scene.jsx"></script>
-<script type="text/babel" src="product-page.jsx"></script>
+<!-- Bundle JSX pre-compile par esbuild (build.js). Plus de @babel/standalone
+     (~3 Mo de Babel telecharge + transformation a chaque visite). -->
+<script defer src="bundle.js"></script>
 </body>
 </html>

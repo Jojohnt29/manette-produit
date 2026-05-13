@@ -1,0 +1,15 @@
+{
+  "name": "manette-produit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Page produit MANETTE — bundle JSX via esbuild, GLB compresse via gltf-transform.",
+  "scripts": {
+    "build:js": "node build.js",
+    "build:glb": "gltf-transform resize assets/manette-source.glb assets/_tmp.glb --width=512 --height=512 && gltf-transform draco assets/_tmp.glb assets/manette.glb --quantize-position 14 --quantize-normal 10 --quantize-color 8 --quantize-texcoord 12 && node -e \"require('fs').unlinkSync('assets/_tmp.glb')\"",
+    "build": "npm run build:js"
+  },
+  "devDependencies": {
+    "@gltf-transform/cli": "^4.1.0",
+    "esbuild": "^0.25.0"
+  }
+}
